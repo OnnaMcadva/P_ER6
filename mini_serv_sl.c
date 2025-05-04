@@ -3,10 +3,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <netinet/ip.h>
+#include <sys/select.h>
 
 int		count = 0, max_fd = 0; // счетчик ID клиентов, максимальный файловый дескриптор
-int		ids[65536]; // массив для связи дескрипторов с ID клиентов
-char	*msgs[65536]; // буферы сообщений клиентов
+int		ids[1024]; // массив для связи дескрипторов с ID клиентов
+char	*msgs[1024]; // буферы сообщений клиентов
 
 fd_set	rfds, wfds, afds; // наборы дескрипторов для чтения/записи/активных соединений
 char	buf_read[1001], buf_write[128]; // буфер для входящих сообщений, для форматированных сообщений сервера
@@ -76,7 +77,7 @@ char *str_join(char *buf, char *add)
 
 void	fatal_error()
 {
-	write(2, "Fatal error\n", 12);
+	write(2, "Fatal error\n", 13);
 	exit(1);
 }
 
@@ -173,7 +174,7 @@ int		main(int ac, char **av)
 	bzero(&servaddr, sizeof(servaddr));
 
 	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(2130706433);
+	servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	servaddr.sin_port = htons(atoi(av[1])); // replace 8080
 
 	if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)))
