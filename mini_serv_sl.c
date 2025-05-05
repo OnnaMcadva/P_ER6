@@ -148,18 +148,6 @@ void	send_msg(int fd)
 	}
 }
 
-// Создает TCP-сокет, добавляет его в afds. При ошибке
-// вызывает fatal_error. Возвращает дескриптор сокета.
-
-int		create_socket()
-{
-	max_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (max_fd < 0)
-		fatal_error();
-	FD_SET(max_fd, &afds);
-	return max_fd;
-}
-
 // Проверяет наличие аргумента (порт). Создает сокет, настраивает
 // адрес сервера (127.0.0.1, порт из аргумента),
 // привязывает (bind) и переводит в режим прослушивания (listen).
@@ -174,7 +162,7 @@ int		main(int ac, char **av)
 {
 	signal(SIGINT, handler);
 	signal(SIGPIPE, handler);
-	
+
 	if (ac != 2)
 	{
 		write(2, "Wrong number of arguments\n", 26);
@@ -182,7 +170,15 @@ int		main(int ac, char **av)
 	}
 
 	FD_ZERO(&afds);
-	sockfd = create_socket();
+
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        write(2, "Fatal error\n", 13);
+        exit(1);
+    }
+    max_fd = sockfd; // Явно присваиваем max_fd
+
+    FD_SET(sockfd, &afds);
 
 	// START COPY-PASTE FROM MAIN
 
@@ -238,3 +234,4 @@ int		main(int ac, char **av)
 	}
 	return 0;
 }
+
