@@ -4,14 +4,15 @@
 #include <stdio.h>
 #include <netinet/ip.h>
 #include <sys/select.h>
+#include <signal.h>
 
 int		count = 0, max_fd = 0; // счетчик ID клиентов, максимальный файловый дескриптор
 int		ids[1024]; // массив для связи дескрипторов с ID клиентов
 char	*msgs[1024]; // буферы сообщений клиентов
 
 fd_set	rfds, wfds, afds; // наборы дескрипторов для чтения/записи/активных соединений
+int		sockfd = 0;
 char	buf_read[1001], buf_write[128]; // буфер для входящих сообщений, для форматированных сообщений сервера
-
 
 // START COPY-PASTE FROM GIVEN MAIN
 
@@ -119,6 +120,18 @@ void	remove_client(int fd)
 	close(fd);
 }
 
+void handler(int sig) {
+    if (sig == SIGINT) {
+        for (int fd = 0; fd <= max_fd; fd++) {
+            if (FD_ISSET(fd, &afds) && fd != sockfd) {
+                remove_client(fd);
+            }
+        }
+        close(sockfd);
+        exit(0);
+    }
+}
+
 // Извлекает сообщения из буфера клиента (через extract_message), форматирует их
 // с префиксом "client <ID>: " и рассылает всем, кроме отправителя.
 
@@ -159,6 +172,9 @@ int		create_socket()
 
 int		main(int ac, char **av)
 {
+	signal(SIGINT, handler);
+	signal(SIGPIPE, handler);
+	
 	if (ac != 2)
 	{
 		write(2, "Wrong number of arguments\n", 26);
@@ -166,7 +182,7 @@ int		main(int ac, char **av)
 	}
 
 	FD_ZERO(&afds);
-	int sockfd = create_socket();
+	sockfd = create_socket();
 
 	// START COPY-PASTE FROM MAIN
 
