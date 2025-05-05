@@ -6,11 +6,6 @@
 ![Screenshot from 2025-05-05 13-52-21](https://github.com/user-attachments/assets/310795e0-2f45-4265-a8c3-f983c6d2523b)
 
 
-![ChatGPT Image 5 мая 2025 г , 16_25_01](https://github.com/user-attachments/assets/3d0fe6a1-2e0b-4fc2-acfe-5053149b6187)
-
-
-
-
 ---
 
 1. **Подготовка и запуск сервера:**
