@@ -172,13 +172,12 @@ int		main(int ac, char **av)
 	FD_ZERO(&afds);
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) {
-        	write(2, "Fatal error\n", 13);
-        	exit(1);
-    }
-    max_fd = sockfd; // Явно присваиваем max_fd
+    	if (sockfd < 0)
+		fatal_error();
+    	max_fd = sockfd; // Явно присваиваем max_fd
 
-    FD_SET(sockfd, &afds);
+
+    	FD_SET(sockfd, &afds);
 
 	// START COPY-PASTE FROM MAIN
 
