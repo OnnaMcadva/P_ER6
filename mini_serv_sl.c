@@ -4,21 +4,16 @@
 #include <stdio.h>
 #include <netinet/ip.h>
 #include <sys/select.h>
-#include <signal.h>
 
-int		count = 0, max_fd = 0; // счетчик ID клиентов, максимальный файловый дескриптор
-int		ids[1024]; // массив для связи дескрипторов с ID клиентов
-char	*msgs[1024]; // буферы сообщений клиентов
+int		count = 0, max_fd = 0;
+int		ids[1024];
+char	*msgs[1024];
 
-fd_set	rfds, wfds, afds; // наборы дескрипторов для чтения/записи/активных соединений
+fd_set	rfds, wfds, afds;
 int		sockfd = 0;
-char	buf_read[1001], buf_write[128]; // буфер для входящих сообщений, для форматированных сообщений сервера
+char	buf_read[1001], buf_write[128];
 
 // START COPY-PASTE FROM GIVEN MAIN
-
-// Извлекает одно сообщение (до \n) из буфера клиента. 
-// Выделяет память для остатка буфера, обновляет указатели и возвращает 1 при успехе,
-// 0 если нет \n, или -1 при ошибке выделения памяти.
 
 int extract_message(char **buf, char **msg)
 {
@@ -47,10 +42,6 @@ int extract_message(char **buf, char **msg)
 	return (0);
 }
 
-// Объединяет текущий буфер клиента с новым входящим сообщением.
-// Выделяет память для новой строки, копирует старый буфер (если есть)
-// и добавляет новое сообщение, освобождая старый буфер.
-
 char *str_join(char *buf, char *add)
 {
 	char	*newbuf;
@@ -73,17 +64,11 @@ char *str_join(char *buf, char *add)
 
 // END COPY-PASTE
 
-// Выводит "Fatal error" в stderr и
-// завершает программу с кодом 1 при критической ошибке.
-
 void	fatal_error()
 {
 	write(2, "Fatal error\n", 13);
 	exit(1);
 }
-
-// Отправляет сообщение всем клиентам (кроме автора),
-// которые готовы к записи (проверяется через wfds).
 
 void	notify_other(int author, char *str)
 {
@@ -94,9 +79,14 @@ void	notify_other(int author, char *str)
 	}
 }
 
-// Регистрирует нового клиента: обновляет max_fd, присваивает ID,
-// инициализирует буфер сообщений, добавляет дескриптор в afds.
-// Оповещает других о подключении клиента.
+void	remove_client(int fd)
+{
+	sprintf(buf_write, "server: client %d just left\n", ids[fd]);
+	notify_other(fd, buf_write);
+	free(msgs[fd]);
+	FD_CLR(fd, &afds);
+	close(fd);
+}
 
 void	register_client(int fd)
 {
@@ -107,33 +97,6 @@ void	register_client(int fd)
 	sprintf(buf_write, "server: client %d just arrived\n", ids[fd]);
 	notify_other(fd, buf_write);
 }
-
-// Удаляет клиента: оповещает других об отключении, освобождает буфер
-// сообщений, убирает дескриптор из afds и закрывает соединение.
-
-void	remove_client(int fd)
-{
-	sprintf(buf_write, "server: client %d just left\n", ids[fd]);
-	notify_other(fd, buf_write);
-	free(msgs[fd]);
-	FD_CLR(fd, &afds);
-	close(fd);
-}
-
-void handler(int sig) {
-    if (sig == SIGINT) {
-        for (int fd = 0; fd <= max_fd; fd++) {
-            if (FD_ISSET(fd, &afds) && fd != sockfd) {
-                remove_client(fd);
-            }
-        }
-        close(sockfd);
-        exit(0);
-    }
-}
-
-// Извлекает сообщения из буфера клиента (через extract_message), форматирует их
-// с префиксом "client <ID>: " и рассылает всем, кроме отправителя.
 
 void	send_msg(int fd)
 {
@@ -148,21 +111,8 @@ void	send_msg(int fd)
 	}
 }
 
-// Проверяет наличие аргумента (порт). Создает сокет, настраивает
-// адрес сервера (127.0.0.1, порт из аргумента),
-// привязывает (bind) и переводит в режим прослушивания (listen).
-// В бесконечном цикле:
-// Копирует активные дескрипторы в rfds/wfds и вызывает select для проверки готовности.
-// Для каждого готового дескриптора:
-// Если это серверный сокет, принимает новое соединение (accept) и регистрирует клиента.
-// Если это клиент, читает данные (recv). Если данных нет или ошибка,
-// удаляет клиента. Иначе добавляет данные в буфер и рассылает сообщения.
-
 int		main(int ac, char **av)
 {
-	signal(SIGINT, handler);
-	signal(SIGPIPE, handler);
-
 	if (ac != 2)
 	{
 		write(2, "Wrong number of arguments\n", 26);
@@ -170,10 +120,12 @@ int		main(int ac, char **av)
 	}
 
 	FD_ZERO(&afds);
+
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
     	if (sockfd < 0)
 		fatal_error();
     	max_fd = sockfd; // Явно присваиваем max_fd
+
     	FD_SET(sockfd, &afds);
 
 	// START COPY-PASTE FROM MAIN
@@ -230,4 +182,22 @@ int		main(int ac, char **av)
 	}
 	return 0;
 }
+
+
+// #include <stdint.h> 
+
+// uint16_t custom_htons(uint16_t port) {
+//     return (port >> 8) | (port << 8);
+// }
+
+// uint32_t custom_htonl(uint32_t ip) {
+//     return ((ip >> 24) & 0xFF) |
+//            ((ip >> 8)  & 0xFF00) |
+//            ((ip << 8)  & 0xFF0000) |
+//            ((ip << 24) & 0xFF000000);
+// }
+
+// servaddr.sin_family = AF_INET;
+// servaddr.sin_addr.s_addr = custom_htonl(INADDR_LOOPBACK);
+// servaddr.sin_port = custom_htons(atoi(av[1]));
 
