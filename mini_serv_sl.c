@@ -139,7 +139,7 @@ int		main(int ac, char **av)
 
 	if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)))
 		fatal_error();
-	if (listen(sockfd, SOMAXCONN)) // the main uses 10, SOMAXCONN is 180 on my machine
+	if (listen(sockfd, SOMAXCONN)) // the main uses 10 -> SOMAXCONN
 		fatal_error();
 
 	// END COPY-PASTE
