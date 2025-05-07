@@ -10,7 +10,6 @@ int		ids[1024];
 char	*msgs[1024];
 
 fd_set	rfds, wfds, afds;
-int		sockfd = 0;
 char	buf_read[1001], buf_write[128];
 
 // START COPY-PASTE FROM GIVEN MAIN
@@ -121,7 +120,7 @@ int		main(int ac, char **av)
 
 	FD_ZERO(&afds);
 
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     	if (sockfd < 0)
 		fatal_error();
     	max_fd = sockfd; // Явно присваиваем max_fd
