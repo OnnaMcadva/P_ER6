@@ -6,11 +6,11 @@
 #include <sys/select.h>
 
 int		count = 0, max_fd = 0;
-int		ids[1024];
-char	*msgs[1024];
+int		ids[65536];
+char	*msgs[65536];
 
 fd_set	rfds, wfds, afds;
-char	buf_read[1001], buf_write[128];
+char	buf_read[1001], buf_write[42];
 
 // START COPY-PASTE FROM GIVEN MAIN
 
@@ -123,9 +123,9 @@ int		main(int ac, char **av)
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     	if (sockfd < 0)
 		fatal_error();
-    	max_fd = sockfd; // Явно присваиваем max_fd
+    max_fd = sockfd; // Явно присваиваем max_fd
 
-    	FD_SET(sockfd, &afds);
+    FD_SET(sockfd, &afds);
 
 	// START COPY-PASTE FROM MAIN
 
