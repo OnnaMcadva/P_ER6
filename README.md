@@ -42,3 +42,10 @@
 ---
 
 
+if (socket(...) == -1) err("Fatal error\n");
+if (bind(...) == -1) err("Fatal error\n");
+if (listen(...) == -1) err("Fatal error\n");
+if (select(...) == -1) err("Fatal error\n");
+if (accept(...) == -1) continue; // не фатально
+if (send(...) == -1) err("Fatal error\n");
+if (recv(...) <= 0) disconnect();
