@@ -13,9 +13,9 @@ fd_set rfds, wfds, afds;
 char buf_read[100000];
 char buf_write[120000];
 
-void fatal_error()
+void err(char  *msg)
 {
-    write(2, "Fatal error\n", 12);
+    write(2, msg, strlen(msg));
     exit(1);
 }
 
@@ -24,7 +24,7 @@ void appeal(int author, const char *msg)
     for (int fd = 0; fd <= max_fd; fd++)
         if (FD_ISSET(fd, &wfds) && fd != author)
             if (send(fd, msg, strlen(msg), 0) == -1)
-                fatal_error();
+                err("Fatal error\n");
 }
 
 void remove_client(int fd)
@@ -51,16 +51,13 @@ void register_client(int fd)
 int main(int ac, char **av)
 {
     if (ac != 2)
-    {
-        write(2, "Wrong number of arguments\n", 26);
-        exit(1);
-    }
+        err("Wrong number of arguments\n");
 
     FD_ZERO(&afds);
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
-        fatal_error();
+        err("Fatal error\n");
     max_fd = sockfd;
 
     FD_SET(sockfd, &afds);
@@ -73,16 +70,16 @@ int main(int ac, char **av)
     servaddr.sin_port = htons(atoi(av[1]));
 
     if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)))
-        fatal_error();
+        err("Fatal error\n");
     if (listen(sockfd, SOMAXCONN))
-        fatal_error();
+        err("Fatal error\n");
 
     while (1)
     {
         rfds = wfds = afds;
 
         if (select(max_fd + 1, &rfds, &wfds, NULL, NULL) < 0)
-            fatal_error();
+            err("Fatal error\n");
 
         for (int fd = 0; fd <= max_fd; fd++)
         {
@@ -127,3 +124,6 @@ int main(int ac, char **av)
     }
     return 0;
 }
+
+
+/* man 7 ip */
