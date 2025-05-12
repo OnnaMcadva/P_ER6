@@ -6,8 +6,8 @@
 #include <sys/select.h>
 
 int count = 0, max_fd = 0;
-int ids[1024];
-char msgs[1024][100000];
+int ids[2048];
+char msgs[2048][100000];
 
 fd_set rfds, wfds, afds;
 char buf_read[100000];
@@ -23,8 +23,7 @@ void appeal(int author, const char *msg)
 {
     for (int fd = 0; fd <= max_fd; fd++)
         if (FD_ISSET(fd, &wfds) && fd != author)
-            if (send(fd, msg, strlen(msg), 0) == -1)
-                err("Fatal error\n");
+            send(fd, msg, strlen(msg), 0);
 }
 
 void remove_client(int fd)
@@ -104,19 +103,16 @@ int main(int ac, char **av)
                     remove_client(fd);
                     break;
                 }
-                else
+                for (int i = 0, j = strlen(msgs[fd]); i < read_bytes; i++, j++)
                 {
-                    for (int i = 0, j = strlen(msgs[fd]); i < read_bytes; i++, j++)
+                    msgs[fd][j] = buf_read[i];
+                    if (msgs[fd][j] == '\n')
                     {
-                        msgs[fd][j] = buf_read[i];
-                        if (msgs[fd][j] == '\n')
-                        {
-                            msgs[fd][j] = '\0';
-                            sprintf(buf_write, "client %d: %s\n", ids[fd], msgs[fd]);
-                            appeal(fd, buf_write);
-                            memset(msgs[fd], 0, sizeof(msgs[fd]));
-                            j = -1;
-                        }
+                        msgs[fd][j] = '\0';
+                        sprintf(buf_write, "client %d: %s\n", ids[fd], msgs[fd]);
+                        appeal(fd, buf_write);
+                        memset(msgs[fd], 0, sizeof(msgs[fd]));
+                        j = -1;
                     }
                 }
             }
