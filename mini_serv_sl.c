@@ -63,19 +63,17 @@ char *str_join(char *buf, char *add)
 
 // END COPY-PASTE
 
-void	fatal_error()
+void	err(char *msg)
 {
-	write(2, "Fatal error\n", 12);
+	write(2, msg, strlen(msg));
 	exit(1);
 }
 
 void	notify_other(int author, char *str)
 {
 	for (int fd = 0; fd <= max_fd; fd++)
-	{
 		if (FD_ISSET(fd, &wfds) && fd != author)
 			send(fd, str, strlen(str), 0);
-	}
 }
 
 void	remove_client(int fd)
@@ -113,19 +111,14 @@ void	send_msg(int fd)
 int		main(int ac, char **av)
 {
 	if (ac != 2)
-	{
-		write(2, "Wrong number of arguments\n", 26);
-		exit(1);
-	}
+		err("Wrong number of arguments\n");
 
 	FD_ZERO(&afds);
-
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     	if (sockfd < 0)
-		fatal_error();
-    max_fd = sockfd; // Явно присваиваем max_fd
-
-    FD_SET(sockfd, &afds);
+		err("Fatal error\n");
+    	max_fd = sockfd;
+    	FD_SET(sockfd, &afds);
 
 	// START COPY-PASTE FROM MAIN
 
@@ -137,9 +130,9 @@ int		main(int ac, char **av)
 	servaddr.sin_port = htons(atoi(av[1])); // replace 8080
 
 	if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)))
-		fatal_error();
+		err("Fatal error\n");
 	if (listen(sockfd, SOMAXCONN)) // the main uses 10 -> SOMAXCONN
-		fatal_error();
+		err("Fatal error\n");
 
 	// END COPY-PASTE
 
@@ -148,7 +141,7 @@ int		main(int ac, char **av)
 		rfds = wfds = afds;
 
 		if (select(max_fd + 1, &rfds, &wfds, NULL, NULL) < 0)
-			fatal_error();
+			err("Fatal error\n");
 
 		for (int fd = 0; fd <= max_fd; fd++)
 		{
@@ -200,3 +193,4 @@ int		main(int ac, char **av)
 // servaddr.sin_addr.s_addr = custom_htonl(INADDR_LOOPBACK);
 // servaddr.sin_port = custom_htons(atoi(av[1]));
 
+// man 7 ip
